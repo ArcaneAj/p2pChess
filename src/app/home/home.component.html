@@ -1,0 +1,7 @@
+<div>
+    <a routerLink="/play">Create new game</a>
+</div>
+<div>
+    <a [routerLink]="gameId ? '/play/' + gameId : null">Join existing game</a>
+    <input type="text" [(ngModel)]="gameId" />
+</div>
