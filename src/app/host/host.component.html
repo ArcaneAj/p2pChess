@@ -1,12 +1,41 @@
-<div *ngIf="!connected">
-    <button (click)="login(userName)">Create</button>
-    <input type="text" [(ngModel)]="userName" />
-</div>
-<div *ngIf="!peerConnected && connected">
-    <button (click)="connect(partnerName)">Join Existing</button>
-    <input type="text" [(ngModel)]="partnerName" />
-</div>
-<div *ngIf="peerConnected">
-    <button (click)="sendMessage(messageValue)">Send Message</button>
-    <input type="text" [(ngModel)]="messageValue" />
-</div>
+<app-loading text="Loading..." [loading]="loading"
+    ><div *ngIf="!connected" fxLayout="column" fxLayoutAlign="center center" class="full-width full-height">
+        <div>
+            <button
+                class="space-below"
+                mat-raised-button
+                color="primary"
+                (click)="login(userNameFormControl.value)"
+                [disabled]="!(userNameFormControl.pristine || userNameFormControl.valid)"
+            >
+                Create
+            </button>
+        </div>
+        <div>
+            <form class="form full-width">
+                <mat-form-field class="full-width">
+                    <mat-label>UserName</mat-label>
+                    <input
+                        type="text"
+                        matInput
+                        [formControl]="userNameFormControl"
+                        [errorStateMatcher]="matcher"
+                        placeholder="ChessMaster69"
+                    />
+                    <mat-hint>A unique username is required</mat-hint>
+                    <mat-error *ngIf="userNameFormControl.hasError('required')">
+                        A unique <strong>non-empty</strong> username is <strong>required</strong>
+                    </mat-error>
+                </mat-form-field>
+            </form>
+        </div>
+    </div>
+    <div *ngIf="!peerConnected && connected">
+        <button mat-raised-button color="primary" (click)="connect(partnerName)">Join Existing</button>
+        <input type="text" [(ngModel)]="partnerName" />
+    </div>
+    <div *ngIf="peerConnected">
+        <button mat-raised-button color="primary" (click)="sendMessage(messageValue)">Send Message</button>
+        <input type="text" [(ngModel)]="messageValue" />
+    </div>
+</app-loading>

@@ -1,0 +1,16 @@
+<div class="container">
+    <div
+        class="loading"
+        *ngIf="loading | async"
+        fxLayout="row"
+        fxLayoutAlign="space-around center"
+    >
+        <mat-card fxLayout="column" fxLayoutAlign="center center">
+            <mat-card-title>{{ text }}</mat-card-title>
+            <mat-spinner></mat-spinner>
+        </mat-card>
+    </div>
+    <div class="content">
+        <ng-content></ng-content>
+    </div>
+</div>

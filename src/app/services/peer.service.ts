@@ -7,6 +7,7 @@ import { Observable, Subject } from 'rxjs';
 export class PeerService {
     private signalingServer = new WebSocket('ws://localhost:9090');
     private connectedUser = '';
+    private peerFound = false;
     private myConnection?: RTCPeerConnection;
 
     private dataChannel?: RTCDataChannel;
@@ -22,9 +23,7 @@ export class PeerService {
 
     constructor() {
         this.signalingServer.onmessage = (message: MessageEvent<any>) => {
-            console.log(message);
             var data = JSON.parse(message.data);
-            console.log(data);
             switch (data.type) {
                 case 'login':
                     this.onLogin(data.success);
@@ -42,14 +41,14 @@ export class PeerService {
                     break;
             }
         };
-        this.signalingServer.onopen = function (ev: Event) {
+        this.signalingServer.onopen = (ev: Event) => {
             console.log('Connection Opened');
         };
-        this.signalingServer.onclose = function (ev: Event) {
-            console.log('Connection Lost');
+        this.signalingServer.onclose = (ev: Event) => {
+            console.error('Connection Lost');
         };
-        this.signalingServer.onerror = function (ev: Event) {
-            console.error(ev);
+        this.signalingServer.onerror = (error) => {
+            console.error(error);
         };
     }
 
@@ -57,7 +56,6 @@ export class PeerService {
         if (!this.dataChannel) {
             throw new Error('dataChannel was not set');
         }
-        console.log('send message: ' + message);
         this.dataChannel.send(message);
     }
 
@@ -71,24 +69,29 @@ export class PeerService {
     }
 
     public connect(name: string): void {
-        console.log(name);
         this.connectedUser = name;
         if (name.length > 0 && this.myConnection) {
             //make an offer
-            const offerOptions: RTCOfferOptions = {};
             this.myConnection.createOffer().then(
                 (offer: RTCSessionDescriptionInit) => {
                     if (!this.myConnection) {
                         throw new Error('myConnection was not set');
                     }
+                    this.peerFound = false;
                     this.send({
                         type: 'offer',
                         offer: offer,
                     });
+                    setTimeout(() => {
+                        if (!this.peerFound) {
+                            alert('Could not connect to that user, please try again later');
+                            return;
+                        }
+                    }, 5000);
                     this.myConnection.setLocalDescription(offer);
                 },
                 (error) => {
-                    alert('An error has occurred.');
+                    console.error(error);
                 }
             );
         }
@@ -96,7 +99,8 @@ export class PeerService {
 
     private onLogin(success: boolean): void {
         if (!success) {
-            alert('oops...try a different username');
+            alert('Username already in use, please try again');
+            this.dataChannelConnectedSubject.next(false);
             return;
         }
         //creating our RTCPeerConnection object
@@ -105,9 +109,6 @@ export class PeerService {
         };
 
         this.myConnection = new RTCPeerConnection(configuration);
-
-        console.log('RTCPeerConnection object was created');
-        console.log(this.myConnection);
 
         //setup ice handling
         //when the browser finds an ice candidate we send it to another peer
@@ -144,8 +145,8 @@ export class PeerService {
                     answer: answer,
                 });
             },
-            function (error) {
-                alert('oops...error');
+            (error) => {
+                console.error(error);
             }
         );
     }
@@ -155,6 +156,7 @@ export class PeerService {
             throw new Error('myConnection was not set');
         }
         this.myConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        this.peerFound = true;
         this.peerConnectedSubject.next(true);
     }
 
@@ -169,7 +171,7 @@ export class PeerService {
         if (!this.myConnection) {
             throw new Error('myConnection was not set');
         }
-        console.log('created data channel');
+
         var dataChannelOptions: RTCDataChannelInit = {
             negotiated: true,
             id: 0,
@@ -177,8 +179,8 @@ export class PeerService {
 
         this.dataChannel = this.myConnection.createDataChannel('myDataChannel', dataChannelOptions);
 
-        this.dataChannel.onerror = (error: Event): void => {
-            console.log('Error:', error);
+        this.dataChannel.onerror = (error: Event) => {
+            console.error(error);
         };
 
         this.dataChannel.onmessage = (event: MessageEvent<any>): void => {
