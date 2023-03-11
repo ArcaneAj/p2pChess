@@ -1,1 +1,12 @@
-<p>host works!</p>
+<div *ngIf="!connected">
+    <button (click)="login(userName)">Create</button>
+    <input type="text" [(ngModel)]="userName" />
+</div>
+<div *ngIf="!peerConnected && connected">
+    <button (click)="connect(partnerName)">Join Existing</button>
+    <input type="text" [(ngModel)]="partnerName" />
+</div>
+<div *ngIf="peerConnected">
+    <button (click)="sendMessage(messageValue)">Send Message</button>
+    <input type="text" [(ngModel)]="messageValue" />
+</div>
